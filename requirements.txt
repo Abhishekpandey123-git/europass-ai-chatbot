@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+pydantic
+pydantic[email]
+weasyprint
+jinja2
+google-genai
+python-dotenv
+python-multipart
