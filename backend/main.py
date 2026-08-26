@@ -1,13 +1,15 @@
 import uuid
+import traceback
+import os
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
-from fastapi.responses import Response
+from fastapi.responses import Response, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
+from fastapi.staticfiles import StaticFiles
 
 from backend.schema import EuropassCV, SessionData, ChatState
 from backend.pdf_generator import generate_pdf_from_cv
-# We will update llm_service next!
-from backend.llm_service import process_chat_interaction
+from backend.workflow import process_chat_interaction
 
 app = FastAPI(title="Europass Chatbot API")
 
@@ -19,18 +21,25 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# In-memory database to store active user sessions
 active_sessions = {}
+
+@app.get("/", response_class=HTMLResponse)
+async def serve_root():
+    """Explicitly serve index.html to prevent black/blank screen issues."""
+    for path in ["index.html", "frontend/index.html"]:
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as f:
+                return f.read()
+    return "<h1>Error: index.html not found! Please check your file structure.</h1>"
 
 @app.get("/api/chat/start")
 def start_chat():
-    """ Initializes a new conversational session. """
     session_id = str(uuid.uuid4())
     active_sessions[session_id] = SessionData(session_id=session_id)
     
     return {
         "session_id": session_id,
-        "bot_message": "Hello! I am your Europass Assistant. To get started, please upload a picture of your passport or ID so I can extract your basic personal details."
+        "bot_message": "Hello! I am your Europass Assistant. To get started, please upload a professional passport-sized photo of yourself. If you don't want a photo on your CV, just click Skip."
     }
 
 @app.post("/api/chat/message")
@@ -39,17 +48,13 @@ async def chat_message(
     text_message: Optional[str] = Form(None),
     file: Optional[UploadFile] = File(None)
 ):
-    """ Handles all incoming chat messages and files. """
     if session_id not in active_sessions:
         raise HTTPException(status_code=404, detail="Session expired or not found. Please refresh the page.")
     
     session_data = active_sessions[session_id]
     
     try:
-        # Pass the input and the current memory to our LLM engine
         updated_session, bot_response = await process_chat_interaction(session_data, text_message, file)
-        
-        # Save the updated memory
         active_sessions[session_id] = updated_session
         
         return {
@@ -57,11 +62,13 @@ async def chat_message(
             "state": updated_session.state
         }
     except Exception as e:
+        print("\n=== AI CRASH REPORT ===")
+        traceback.print_exc()
+        print("=======================\n")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/generate-pdf/{session_id}")
 async def generate_pdf(session_id: str):
-    """ Renders the PDF using the stored session data. """
     if session_id not in active_sessions:
         raise HTTPException(status_code=404, detail="Session not found.")
     
@@ -76,3 +83,9 @@ async def generate_pdf(session_id: str):
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"PDF generation failed: {str(e)}")
+
+# Mount static files safely depending on folder layout
+if os.path.exists("frontend"):
+    app.mount("/", StaticFiles(directory="frontend"), name="frontend")
+else:
+    app.mount("/", StaticFiles(directory="."), name="root_static")
