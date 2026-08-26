@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - "**"
-
   pull_request:
 
 permissions:
@@ -31,6 +30,10 @@ jobs:
           pip install -r requirements.txt
           pip install pytest
 
+      - name: Set Python path
+        run: |
+          echo "PYTHONPATH=$GITHUB_WORKSPACE" >> $GITHUB_ENV
+
       - name: Check Python syntax
         run: |
           python -m compileall -q backend
@@ -44,10 +47,8 @@ jobs:
           test -f templates/europass_template.html
 
       - name: Run tests
-        env:
-          PYTHONPATH: ${{ github.workspace }}
         run: |
-          pytest tests -v
+          python -m pytest tests -v
 
       - name: CI successful
         run: echo "CI checks passed successfully"
