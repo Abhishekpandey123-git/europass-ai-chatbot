@@ -1,4 +1,5 @@
 import uuid
+import traceback
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.responses import Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -6,7 +7,6 @@ from typing import Optional
 
 from backend.schema import EuropassCV, SessionData, ChatState
 from backend.pdf_generator import generate_pdf_from_cv
-# We will update llm_service next!
 from backend.llm_service import process_chat_interaction
 
 app = FastAPI(title="Europass Chatbot API")
@@ -24,13 +24,12 @@ active_sessions = {}
 
 @app.get("/api/chat/start")
 def start_chat():
-    """ Initializes a new conversational session. """
     session_id = str(uuid.uuid4())
     active_sessions[session_id] = SessionData(session_id=session_id)
     
     return {
         "session_id": session_id,
-        "bot_message": "Hello! I am your Europass Assistant. To get started, please upload a picture of your passport or ID so I can extract your basic personal details."
+        "bot_message": "Hello! I am your Europass Assistant. To get started, please upload a professional passport-sized photo of yourself. If you don't want a photo on your CV, just type 'skip'."
     }
 
 @app.post("/api/chat/message")
@@ -57,6 +56,10 @@ async def chat_message(
             "state": updated_session.state
         }
     except Exception as e:
+        # --- DIAGNOSTIC CRASH REPORTER ---
+        print("\n=== AI CRASH REPORT ===")
+        traceback.print_exc()
+        print("=======================\n")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/generate-pdf/{session_id}")

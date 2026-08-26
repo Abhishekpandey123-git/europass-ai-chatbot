@@ -1,6 +1,7 @@
 import os
 import tempfile
 import time
+import base64
 from google import genai
 from google.genai import types
 from dotenv import load_dotenv
@@ -11,133 +12,123 @@ client = genai.Client()
 
 async def process_chat_interaction(session_data: SessionData, text_message: str = None, file = None):
     bot_response = ""
-    
-    # --- Helper: Extract new document and merge with existing CV ---
-    async def extract_and_merge(uploaded_file, current_cv: EuropassCV) -> EuropassCV:
+    text_lower = text_message.lower().strip() if text_message else ""
+    is_skip = "skip" in text_lower or "done" in text_lower
+
+    async def extract_and_merge(uploaded_file, current_cv: EuropassCV, context: str) -> EuropassCV:
         file_bytes = await uploaded_file.read()
-        mime_type = uploaded_file.content_type
-        
         with tempfile.NamedTemporaryFile(delete=False) as temp_file:
             temp_file.write(file_bytes)
             temp_path = temp_file.name
 
         gemini_file = None
         try:
-            gemini_file = client.files.upload(file=temp_path, config={'mime_type': mime_type})
-            
+            gemini_file = client.files.upload(file=temp_path, config={'mime_type': uploaded_file.content_type})
             while hasattr(gemini_file, 'state') and gemini_file.state and "PROCESSING" in str(gemini_file.state):
                 time.sleep(2)
                 gemini_file = client.files.get(name=gemini_file.name)
 
-            # Prompt forces Gemini to combine the old JSON with the new document
             prompt = f"""
-            You are a Europass CV assistant. 
-            Here is the user's current CV data in JSON:
-            {current_cv.model_dump_json()}
-            
-            Extract any relevant information from the provided document and MERGE it into the current CV data. 
-            Do not delete existing information. Add new education, work, or language skills to the existing lists.
-            Strictly adhere to the Europass CEFR format for languages.
+            You are a Europass CV assistant. The user is currently providing: {context}.
+            Current CV JSON: {current_cv.model_dump_json()}
+            Extract the new info from the document/text and MERGE it. Do not delete existing info.
             """
             
             for attempt in range(3):
                 try:
-                    response = client.models.generate_content(
+                    res = client.models.generate_content(
                         model='gemini-3.6-flash',
-                        contents=[gemini_file, prompt],
-                        config=types.GenerateContentConfig(
-                            response_mime_type="application/json",
-                            response_schema=EuropassCV,
-                            temperature=0.1,
-                        ),
+                        contents=[gemini_file, prompt] if gemini_file else [prompt],
+                        config=types.GenerateContentConfig(response_mime_type="application/json", response_schema=EuropassCV, temperature=0.1)
                     )
                     break
                 except Exception as e:
-                    if "503" in str(e) or "Deadline" in str(e):
-                        if attempt < 2:
-                            time.sleep(3)
-                            continue
-                    raise e
-                    
-            return EuropassCV.model_validate_json(response.text)
+                    if attempt < 2: time.sleep(3)
+                    else: raise e
+            return EuropassCV.model_validate_json(res.text)
         finally:
-            if gemini_file:
-                try:
-                    client.files.delete(name=gemini_file.name)
-                except:
-                    pass
-            if os.path.exists(temp_path):
-                os.remove(temp_path)
+            if gemini_file: client.files.delete(name=gemini_file.name)
+            if os.path.exists(temp_path): os.remove(temp_path)
 
-    # Clean the text input
-    text_lower = text_message.lower().strip() if text_message else ""
-    is_done = "done" in text_lower or "skip" in text_lower
+    # --- THE INTERVIEW FLOW ---
+    state = session_data.state
 
-    # --- STATE MACHINE LOGIC ---
-    
-    if session_data.state == ChatState.AWAITING_PASSPORT:
+    if state == ChatState.AWAITING_PROFILE_PIC:
         if file:
-            session_data.cv = await extract_and_merge(file, session_data.cv)
-            session_data.state = ChatState.AWAITING_DEGREES
-            bot_response = "Passport processed! Next, please upload your degree certificates one by one. Say 'done' when you have uploaded all of them."
+            file_bytes = await file.read()
+            session_data.cv.profile_image_base64 = base64.b64encode(file_bytes).decode('utf-8')
+            session_data.state = ChatState.AWAITING_PASSPORT
+            bot_response = "Looking good! Next, please upload your Passport for your personal details."
+        elif is_skip:
+            session_data.state = ChatState.AWAITING_PASSPORT
+            bot_response = "Skipped photo. Please upload your Passport."
         else:
-            bot_response = "Please upload a document (like a passport or ID) so I can extract your personal details. If you want to skip this, type 'skip'."
-            if is_done:
-                session_data.state = ChatState.AWAITING_DEGREES
-                bot_response = "Skipped personal details. Please upload your degree certificates one by one. Type 'done' when finished."
+            bot_response = "Let's begin! Please upload a professional passport-sized photo (or type 'skip')."
 
-    elif session_data.state == ChatState.AWAITING_DEGREES:
+    elif state == ChatState.AWAITING_PASSPORT:
         if file:
-            session_data.cv = await extract_and_merge(file, session_data.cv)
-            bot_response = "Degree processed successfully! Upload another degree, or type 'done' if that was the last one."
-        elif is_done:
-            session_data.state = ChatState.AWAITING_CERTIFICATES
-            bot_response = "Great! Now, please upload any language test results or other certificates. Type 'done' when you are finished."
+            session_data.cv = await extract_and_merge(file, session_data.cv, "Passport Personal Details")
+            session_data.state = ChatState.AWAITING_ABOUT
+            bot_response = "Got it! Next, what would you like in your 'About' section? Tell me your career goals, or ask me to write one for you!"
         else:
-            bot_response = "Please upload your degree document, or type 'done' if you have no more to add."
+            bot_response = "Please upload your passport (or type 'skip')."
 
-    elif session_data.state == ChatState.AWAITING_CERTIFICATES:
+    elif state == ChatState.AWAITING_ABOUT:
+        if text_message:
+            session_data.cv.about_me = text_message # (You can enhance this to ask LLM to rewrite it)
+            session_data.state = ChatState.AWAITING_HIGHER_SEC
+            bot_response = "Saved your About section! Now, please upload your Higher Secondary (Class XII) document."
+        else:
+            bot_response = "Please type your About section details."
+
+    elif state == ChatState.AWAITING_HIGHER_SEC:
         if file:
-            session_data.cv = await extract_and_merge(file, session_data.cv)
-            bot_response = "Certificate processed! Upload another, or type 'done'."
-        elif is_done:
-            # Figure out exactly what the AI missed
-            missing = []
-            pi = session_data.cv.personal_info
-            if not pi.first_name: missing.append("first_name")
-            if not pi.last_name: missing.append("last_name")
-            if not pi.email: missing.append("email")
-            if not pi.phone: missing.append("phone")
-            
-            session_data.missing_fields_queue = missing
-            
-            if missing:
-                session_data.state = ChatState.REVIEWING_MISSING_DATA
-                bot_response = f"Awesome, documents are processed. I noticed some missing details. First, what is your {missing[0].replace('_', ' ')}?"
-            else:
-                session_data.state = ChatState.READY_FOR_PDF
-                bot_response = "All documents processed and no details are missing! You can now click the Generate PDF button."
+            session_data.cv = await extract_and_merge(file, session_data.cv, "Higher Secondary Education")
+            session_data.state = ChatState.AWAITING_SEC_EDU
+            bot_response = "Class XII processed. Next, upload your Secondary Education (Class X) document."
         else:
-            bot_response = "Please upload a certificate, or type 'done'."
+            bot_response = "Upload your Class XII document, or type 'skip'."
 
-    elif session_data.state == ChatState.REVIEWING_MISSING_DATA:
-        if session_data.missing_fields_queue and text_message:
-            current_field = session_data.missing_fields_queue.pop(0)
-            
-            # Save the user's manual text entry into the CV
-            if current_field == "first_name": session_data.cv.personal_info.first_name = text_message
-            elif current_field == "last_name": session_data.cv.personal_info.last_name = text_message
-            elif current_field == "email": session_data.cv.personal_info.email = text_message
-            elif current_field == "phone": session_data.cv.personal_info.phone = text_message
-            
-        if session_data.missing_fields_queue:
-            next_field = session_data.missing_fields_queue[0]
-            bot_response = f"Got it. Next, what is your {next_field.replace('_', ' ')}?"
+    elif state == ChatState.AWAITING_SEC_EDU:
+        if file:
+            session_data.cv = await extract_and_merge(file, session_data.cv, "Secondary Education")
+            session_data.state = ChatState.AWAITING_WORK
+            bot_response = "Class X processed. Next, upload any work experience documents (Optional, type 'skip' if none)."
         else:
-            session_data.state = ChatState.READY_FOR_PDF
-            bot_response = "Perfect! I have all the information I need. Click the button to generate and download your official Europass PDF."
+            bot_response = "Upload your Class X document, or type 'skip'."
 
-    elif session_data.state == ChatState.READY_FOR_PDF:
-        bot_response = "You are all set! Click the Generate PDF button below."
+    elif state == ChatState.AWAITING_WORK:
+        if file:
+            session_data.cv = await extract_and_merge(file, session_data.cv, "Work Experience")
+            bot_response = "Work added. Upload another, or type 'done'."
+        elif is_skip:
+            session_data.state = ChatState.AWAITING_LANGUAGES
+            bot_response = "Moving on! Please upload any language test results (IELTS, TOEFL, etc.)."
+
+    elif state == ChatState.AWAITING_LANGUAGES:
+        if file:
+            session_data.cv = await extract_and_merge(file, session_data.cv, "Language Results")
+            bot_response = "Languages added. Upload another, or type 'done'."
+        elif is_skip:
+            session_data.state = ChatState.AWAITING_SKILLS
+            bot_response = "Next, type out a comma-separated list of your technical and personal skills."
+
+    elif state == ChatState.AWAITING_SKILLS:
+        if text_message:
+            session_data.cv.digital_skills = [s.strip() for s in text_message.split(",")]
+            session_data.state = ChatState.AWAITING_OTHER
+            bot_response = "Skills saved! Is there any other information you want to add to your CV? (Type 'skip' if no)."
+
+    elif state == ChatState.AWAITING_OTHER:
+        if text_message and not is_skip:
+            session_data.cv.other_info = text_message
+        session_data.state = ChatState.AWAITING_HOBBIES
+        bot_response = "Finally, list your hobbies and interests (comma-separated), or type 'skip'."
+
+    elif state == ChatState.AWAITING_HOBBIES:
+        if text_message and not is_skip:
+            session_data.cv.hobbies = [h.strip() for h in text_message.split(",")]
+        session_data.state = ChatState.READY_FOR_PDF
+        bot_response = "Amazing! Your CV is completely mapped out. Click Generate PDF below!"
 
     return session_data, bot_response

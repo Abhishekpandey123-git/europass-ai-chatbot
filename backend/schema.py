@@ -2,8 +2,6 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 from enum import Enum
 
-# --- 1. Europass CV Structures ---
-
 class Address(BaseModel):
     line1: Optional[str] = Field(None, description="Street address")
     city: Optional[str] = None
@@ -11,8 +9,8 @@ class Address(BaseModel):
     country: Optional[str] = None
 
 class PersonalInfo(BaseModel):
-    first_name: Optional[str] = None  # Made optional for early chat stages
-    last_name: Optional[str] = None   # Made optional for early chat stages
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
     email: Optional[str] = None
     phone: Optional[str] = None
     address: Optional[Address] = None
@@ -46,24 +44,32 @@ class LanguageSkill(BaseModel):
     writing: str = Field(..., description="Strictly one of: A1, A2, B1, B2, C1, C2")
 
 class EuropassCV(BaseModel):
+    profile_image_base64: Optional[str] = None
+    about_me: Optional[str] = None
     personal_info: PersonalInfo = Field(default_factory=PersonalInfo)
     work_experience: List[WorkExperience] = Field(default_factory=list)
     education: List[Education] = Field(default_factory=list)
     mother_tongues: List[str] = Field(default_factory=list)
     other_languages: List[LanguageSkill] = Field(default_factory=list)
     digital_skills: List[str] = Field(default_factory=list)
-
-# --- 2. Chatbot State Management ---
+    hobbies: List[str] = Field(default_factory=list)
+    other_info: Optional[str] = None
 
 class ChatState(str, Enum):
+    AWAITING_PROFILE_PIC = "AWAITING_PROFILE_PIC"
     AWAITING_PASSPORT = "AWAITING_PASSPORT"
-    AWAITING_DEGREES = "AWAITING_DEGREES"
-    AWAITING_CERTIFICATES = "AWAITING_CERTIFICATES"
-    REVIEWING_MISSING_DATA = "REVIEWING_MISSING_DATA"
+    AWAITING_ABOUT = "AWAITING_ABOUT"
+    AWAITING_HIGHER_SEC = "AWAITING_HIGHER_SEC"
+    AWAITING_SEC_EDU = "AWAITING_SEC_EDU"
+    AWAITING_WORK = "AWAITING_WORK"
+    AWAITING_LANGUAGES = "AWAITING_LANGUAGES"
+    AWAITING_SKILLS = "AWAITING_SKILLS"
+    AWAITING_OTHER = "AWAITING_OTHER"
+    AWAITING_HOBBIES = "AWAITING_HOBBIES"
     READY_FOR_PDF = "READY_FOR_PDF"
 
 class SessionData(BaseModel):
     session_id: str
-    state: ChatState = ChatState.AWAITING_PASSPORT
+    state: ChatState = ChatState.AWAITING_PROFILE_PIC
     cv: EuropassCV = Field(default_factory=EuropassCV)
     missing_fields_queue: List[str] = Field(default_factory=list)
