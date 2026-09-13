@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Europass AI Assistant</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="chat-container">
+        <header class="chat-header">
+            <h2>Europass AI Assistant</h2>
+            <p>Your personal CV builder</p>
+        </header>
+        
+        <div id="chatBox" class="chat-box">
+            <!-- Chat bubbles will be injected here via JavaScript -->
+        </div>
+
+        <div id="pdfContainer" class="pdf-container hidden">
+            <button id="downloadPdfBtn" class="btn-success">Download Final Europass PDF</button>
+        </div>
+        
+        <!-- File Name Preview -->
+        <div id="filePreview" class="file-preview hidden">
+            <span id="fileName">document.pdf</span>
+            <button type="button" id="removeFileBtn">✖</button>
+        </div>
+
+        <form id="chatForm" class="chat-input-area">
+            <label for="fileInput" class="file-label" title="Attach Document">📎</label>
+            <input type="file" id="fileInput" class="hidden-input" accept=".pdf, image/png, image/jpeg">
+            
+            <input type="text" id="textInput" placeholder="Type a message or upload a document..." autocomplete="off">
+            <button type="submit" id="sendBtn">Send</button>
+        </form>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
