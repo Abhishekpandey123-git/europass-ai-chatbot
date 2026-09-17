@@ -5,36 +5,103 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Europass AI Assistant</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Include html2pdf library for client-side PDF downloads -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
-    <div class="chat-container">
-        <header class="chat-header">
-            <h2>Europass AI Assistant</h2>
-            <p>Your personal CV builder</p>
-        </header>
-        
-        <div id="chatBox" class="chat-box">
-            <!-- Chat bubbles will be injected here via JavaScript -->
-        </div>
-
-        <div id="pdfContainer" class="pdf-container hidden">
-            <button id="downloadPdfBtn" class="btn-success">Download Final Europass PDF</button>
-        </div>
-        
-        <!-- File Name Preview -->
-        <div id="filePreview" class="file-preview hidden">
-            <span id="fileName">document.pdf</span>
-            <button type="button" id="removeFileBtn">✖</button>
-        </div>
-
-        <form id="chatForm" class="chat-input-area">
-            <label for="fileInput" class="file-label" title="Attach Document">📎</label>
-            <input type="file" id="fileInput" class="hidden-input" accept=".pdf, image/png, image/jpeg">
+    <!-- Initial Entry Modal Window -->
+    <div id="entryModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 9999;">
+        <div style="background: white; padding: 30px; border-radius: 8px; width: 400px; max-width: 90%; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+            <h2 style="margin-bottom: 15px; color: #2d3748;">Europass CV Assistant</h2>
+            <p style="font-size: 0.9em; color: #4a5568; margin-bottom: 20px;">Welcome! Choose how you would like to begin your session:</p>
             
-            <input type="text" id="textInput" placeholder="Type a message or upload a document..." autocomplete="off">
-            <button type="submit" id="sendBtn">Send</button>
-        </form>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <button id="modalNewSession" style="background: #3182ce; color: white; border: none; padding: 10px; border-radius: 5px; font-weight: bold; cursor: pointer;">✨ Start New Session</button>
+                <button id="modalRestoreSlip" style="background: #4a5568; color: white; border: none; padding: 10px; border-radius: 5px; font-weight: bold; cursor: pointer;">📂 Restore from Slip File</button>
+                <div style="margin-top: 10px; border-top: 1px solid #e2e8f0; padding-top: 15px;">
+                    <label style="font-size: 0.85em; font-weight: bold; color: #718096; display: block; margin-bottom: 5px;">Or enter existing Session Token ID:</label>
+                    <div style="display: flex; gap: 5px;">
+                        <input type="text" id="tokenInput" placeholder="Paste session UUID..." style="flex: 1; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 0.85em;">
+                        <button id="modalEnterToken" style="background: #38a169; color: white; border: none; padding: 8px 12px; border-radius: 4px; font-weight: bold; cursor: pointer;">Enter</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <!-- Hidden slip file input -->
+    <input type="file" id="slipFileInput" accept=".json" style="display: none;">
+
+    <div class="app-layout">
+        <!-- Chat Interface Section -->
+        <div class="chat-container">
+            <header class="chat-header">
+                <h2>Europass AI Assistant</h2>
+                <p>Your personal CV builder</p>
+            </header>
+            
+            <div id="chatBox" class="chat-box">
+                <!-- Chat bubbles will be injected here via JavaScript -->
+            </div>
+
+            <div id="pdfContainer" class="pdf-container hidden">
+                <button id="downloadPdfBtn" class="btn-success">Download Final Europass PDF</button>
+            </div>
+            
+            <!-- File Name Preview -->
+            <div id="filePreview" class="file-preview hidden">
+                <span id="fileName">document.pdf</span>
+                <button type="button" id="removeFileBtn">✖</button>
+            </div>
+
+            <form id="chatForm" class="chat-input-area">
+                <label for="fileInput" class="file-label" title="Attach Document">📎</label>
+                <input type="file" id="fileInput" class="hidden-input" accept=".pdf, image/png, image/jpeg">
+                
+                <input type="text" id="textInput" placeholder="Type a message or upload a document..." autocomplete="off">
+                <button type="submit" id="sendBtn">Send</button>
+            </form>
+        </div>
+
+        <!-- Live CV Preview Panel -->
+        <div class="preview-container">
+            <header class="preview-header">
+                <h2>Live CV Preview</h2>
+                <p>Real-time updates as you chat</p>
+            </header>
+            <div style="padding: 10px 16px; background: #fff; border-bottom: 1px solid #eee;">
+                <button onclick="downloadLivePreviewPDF()" style="background: #004080; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%;">📥 Download Preview PDF</button>
+            </div>
+            <div id="cvPreviewContent" class="preview-box">
+                <p class="placeholder-text">Your live CV summary will appear here once data extraction begins...</p>
+            </div>
+        </div>
+    </div>
+    <script>
+        function downloadLivePreviewPDF() {
+            const element = document.getElementById('cvPreviewContent');
+            if (!element || element.innerText.includes("Your live CV summary will appear here")) {
+                alert("No CV content available to download yet!");
+                return;
+            }
+
+            const options = {
+                margin:       0,
+                filename:     'Europass_CV_Preview.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { 
+                    scale: 2, 
+                    useCORS: true, 
+                    letterRendering: true,
+                    backgroundColor: null 
+                },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                pagebreak:    { mode: ['css', 'legacy'] }
+            };
+
+            html2pdf().from(element).set(options).save();
+        }
+    </script>
     <script src="script.js"></script>
 </body>
 </html>

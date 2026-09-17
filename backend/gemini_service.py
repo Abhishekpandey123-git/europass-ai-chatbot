@@ -15,6 +15,9 @@ if not api_key:
 client = genai.Client(api_key=api_key)
 
 async def parse_document_with_gemini(uploaded_file, current_cv: EuropassCV, context: str) -> EuropassCV:
+    """
+    Reserved exclusively for native visual/multimodal inspection.
+    """
     base64_image = await get_document_base64_image(uploaded_file)
 
     prompt = f"""
@@ -53,7 +56,7 @@ async def parse_document_with_gemini(uploaded_file, current_cv: EuropassCV, cont
     """
 
     response = client.models.generate_content(
-        model='gemini-3.6-flash',
+        model='gemini-2.5-flash',
         contents=[
             types.Part.from_bytes(
                 data=base64.b64decode(base64_image),
@@ -74,7 +77,6 @@ async def parse_document_with_gemini(uploaded_file, current_cv: EuropassCV, cont
 
     current_dict = current_cv.model_dump()
 
-    # Safely merge personal info and handle type casting (e.g., string vs list for nationality)
     if "personal_info" in data_dict and isinstance(data_dict["personal_info"], dict):
         for k, v in data_dict["personal_info"].items():
             if v and str(v).strip() and str(v).lower() not in ["n/a", "none", ""]:
@@ -86,7 +88,6 @@ async def parse_document_with_gemini(uploaded_file, current_cv: EuropassCV, cont
                 else:
                     current_dict["personal_info"][k] = str(v).strip()
 
-    # Merge education safely
     if "education" in data_dict and isinstance(data_dict["education"], list):
         for edu in data_dict["education"]:
             if isinstance(edu, dict) and edu.get("title"):
@@ -98,7 +99,6 @@ async def parse_document_with_gemini(uploaded_file, current_cv: EuropassCV, cont
                     "description": str(edu.get("description") or "")
                 })
 
-    # Merge work experience safely
     if "work_experience" in data_dict and isinstance(data_dict["work_experience"], list):
         for work in data_dict["work_experience"]:
             if isinstance(work, dict) and work.get("title"):
@@ -111,28 +111,3 @@ async def parse_document_with_gemini(uploaded_file, current_cv: EuropassCV, cont
                 })
 
     return EuropassCV.model_validate(current_dict)
-
-
-async def generate_ai_about_me(current_cv: EuropassCV) -> str:
-    """
-    Generates a professional profile summary dynamically using Gemini 
-    based on the candidate's existing academic and skill profile.
-    """
-    first_name = current_cv.personal_info.first_name or "Candidate"
-    last_name = current_cv.personal_info.last_name or ""
-    edu_titles = [e.title for e in current_cv.education] if current_cv.education else []
-    skills = current_cv.digital_skills if current_cv.digital_skills else []
-    
-    prompt = f"""
-    Write a professional, concise 2-sentence Europass profile summary (About Me) for {first_name} {last_name}.
-    Their educational background includes: {', '.join(edu_titles)}.
-    Their technical skills include: {', '.join(skills)}.
-    Keep it formal, motivation-driven, and tailored for career/academic opportunities. Return ONLY the raw summary text.
-    """
-
-    response = client.models.generate_content(
-        model='gemini-3.6-flash',
-        contents=[prompt],
-        config=types.GenerateContentConfig(temperature=0.7),
-    )
-    return response.text.strip()
