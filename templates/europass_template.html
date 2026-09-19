@@ -2,117 +2,85 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Europass CV Template</title>
+  <title>Europass CV</title>
   <style>
-    body { font-family: Arial, Helvetica, sans-serif; color: #333; margin: 0; padding: 0; font-size: 13px; line-height: 1.4; }
-    .cv { width: 100%; max-width: 800px; margin: 0 auto; background: white; }
-    .page { padding: 30px; page-break-after: always; position: relative; }
-    .brand { margin-bottom: 20px; }
-    .eu-logo rect { fill: #15479E; }
-    .header { display: flex; gap: 20px; margin-bottom: 25px; align-items: flex-start; }
-    .photo { width: 90px; height: 110px; background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #666; object-fit: cover; border-radius: 4px; overflow: hidden; flex-shrink: 0; }
-    .photo img { width: 100%; height: 100%; object-fit: cover; }
-    .identity h1 { font-size: 22px; color: #15479E; margin: 0 0 8px 0; }
-    .identity .line { font-size: 12px; margin-bottom: 3px; color: #4a5568; }
-    .section { margin-bottom: 20px; }
-    .section h2 { font-size: 14px; color: #15479E; margin: 0 0 5px 0; letter-spacing: 0.5px; }
-    .rule { height: 2px; background: #15479E; margin-bottom: 10px; }
-    .entry { margin-bottom: 15px; }
-    .entry h3 { font-size: 13px; margin: 0 0 3px 0; color: #2d3748; }
-    .institution, .company { font-size: 12px; font-weight: bold; color: #4a5568; margin-bottom: 2px; }
-    .institution span, .company span, .entry .date { float: right; font-weight: normal; color: #718096; }
-    .location { font-size: 11px; color: #718096; margin-bottom: 5px; }
-    ul { margin: 5px 0 0 15px; padding: 0; }
-    li { font-size: 12px; margin-bottom: 3px; color: #4a5568; }
-    p { margin: 0 0 8px 0; color: #4a5568; font-size: 12px; }
+    @page { size: A4; margin: 0; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #e9e9e9; font-family: Arial, Helvetica, sans-serif; color: #6b6b6b; }
+    .page { position: relative; width: 210mm; min-height: 297mm; margin: 12mm auto; background: #fff; overflow: hidden; padding: 16mm 9mm 14mm; box-shadow: 0 0 5px rgba(0,0,0,.18); }
+    .page + .page { page-break-before: always; }
+    .stripe, .corner { position: absolute; background: #82acd9; }
+    .stripe { left: 0; right: 0; height: 5.5mm; }
+    .top-stripe { top: 0; } .bottom-stripe { bottom: 0; }
+    .corner { width: 6mm; height: 21mm; } .top-left { top: 0; left: 0; } .top-right { top: 0; right: 0; }
+    .bottom-left { bottom: 0; left: 0; } .bottom-right { bottom: 0; right: 0; }
+    .header { position: relative; min-height: 42mm; }
+    .profile { position: absolute; left: 0; top: 0; width: 35mm; height: 35mm; border: .7mm solid #c8c8c8; border-radius: 50%; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #fafafa; color: #aaa; font-size: 8pt; text-align: center; }
+    .profile img { width: 100%; height: 100%; object-fit: cover; }
+    .identity { margin-left: 44mm; margin-right: 43mm; font-size: 8.1pt; line-height: 1.35; }
+    .name, h2, .entry-title, .work-company, .work-role, .skill-title { color: #245b91; }
+    .name { font-size: 14pt; font-weight: 700; margin-bottom: 1.5mm; }
+    .identity-row, .contact { margin: .8mm 0; } .contact { color: #4f4f4f; }
+    .label { font-weight: 700; color: #4f4f4f; }
+    .europass { position: absolute; right: 0; top: -3mm; display: flex; align-items: center; gap: 3.5mm; }
+    .eu-flag { width: 16mm; height: 10.67mm; object-fit: cover; }
+    .eu-text { color: #71479a; font-size: 19pt; font-weight: 700; line-height: 1; white-space: nowrap; }
+    h2 { margin: 0; padding-bottom: 1.2mm; border-bottom: .35mm solid #b9b9b9; font-size: 10.2pt; font-weight: 700; text-transform: uppercase; }
+    .section { margin-top: 4mm; } .about { margin-top: 0; }
+    .body-text, .details, .meta, li, .skill-text { font-size: 8pt; line-height: 1.35; }
+    .body-text { margin-top: 2.5mm; } .entry, .work-entry { margin-top: 3mm; }
+    .entry-title, .work-company, .work-role, .skill-title { font-size: 8.6pt; font-weight: 700; }
+    .entry-subtitle { color: #555; font-size: 8.4pt; font-weight: 700; font-style: italic; margin-top: .8mm; }
+    .details { margin-top: 1mm; } .work-role { margin-top: 1mm; }
+    .language-row { display: flex; gap: 4mm; margin-top: 1.6mm; font-size: 8pt; font-weight: 700; text-transform: uppercase; }
+    .skill-group { margin-top: 3mm; } .skill-text { margin-top: 1.6mm; }
+    .closing { margin-top: 10mm; border-top: .35mm solid #aaa; padding-top: 6mm; font-size: 7.8pt; line-height: 1.35; font-style: italic; }
+    .date { margin-top: 3mm; font-style: normal; } .placeholder { color: #aaa; }
+    .template-note { position: absolute; right: 9mm; bottom: 7mm; font-size: 6.5pt; color: #aaa; }
+    @media print { body { background: #fff; } .page { margin: 0; box-shadow: none; } }
   </style>
 </head>
 <body>
-<main class="cv">
-
+{% set p = cv.personal_info|default({}, true) %}
+{% set address = p.address|default({}, true) %}
+{% set nationality = p.nationality|default([], true) %}
 <section class="page">
-  <div class="brand">
-    <svg class="eu-logo" viewBox="0 0 220 50" width="160" aria-label="European Union emblem">
-      <rect x="0" y="0" width="60" height="42" fill="#15479E"/>
-      <text x="72" y="30" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="600" fill="#70408F">europass</text>
-    </svg>
-  </div>
-
-  <header class="header">
-    <div class="photo">
-      {% if cv.profile_image_base64 %}
-        <img src="data:image/jpeg;base64,{{ cv.profile_image_base64 }}" alt="Profile Photo">
-      {% else %}
-        PHOTO
-      {% endif %}
-    </div>
+  <div class="stripe top-stripe"></div><div class="corner top-left"></div><div class="corner top-right"></div><div class="stripe bottom-stripe"></div><div class="corner bottom-left"></div><div class="corner bottom-right"></div>
+  <div class="header">
+    <div class="profile">{% if cv.profile_image_base64 %}<img src="data:image/jpeg;base64,{{ cv.profile_image_base64 }}" alt="Profile Photo">{% else %}<span>PROFILE<br>PHOTO</span>{% endif %}</div>
     <div class="identity">
-      <h1>{{ cv.personal_info.first_name|default('[First Name]') }} {{ cv.personal_info.last_name|default('[Last Name]') }}</h1>
-      <div class="line"><b>Phone number:</b> {{ cv.personal_info.phone|default('[Phone Number]') }}</div>
-      <div class="line"><b>Email address:</b> {{ cv.personal_info.email|default('[Email Address]') }}</div>
-      {% if cv.personal_info.address %}
-      <div class="line"><b>Home:</b> {{ cv.personal_info.address.line1|default('') }} {{ cv.personal_info.address.city|default('') }} {{ cv.personal_info.address.country|default('') }}</div>
-      {% endif %}
+      <div class="name">{{ p.first_name|default('FULL NAME', true) }} {{ p.last_name|default('', true) }}</div>
+      <div class="identity-row"><span class="label">Passport:</span> {{ p.passport|default('[PASSPORT NUMBER]', true) }} &nbsp;&nbsp; <span class="label">Nationality:</span> {{ nationality|join(', ')|default('[NATIONALITY]', true) }} &nbsp;&nbsp; <span class="label">Date of birth:</span> {{ p.date_of_birth|default('[DD/MM/YYYY]', true) }} &nbsp;&nbsp; <span class="label">Gender:</span> {{ p.gender|default('[GENDER]', true) }}</div>
+      <div class="contact">Phone number: <span class="label">{{ p.phone|default('[PHONE]', true) }}</span> &nbsp;&nbsp; Email address: <span class="label">{{ p.email|default('[EMAIL]', true) }}</span></div>
+      <div class="contact">Home: <span class="label">{{ address.line1|default('', true) }} {{ address.city|default('', true) }} {{ address.country|default('[ADDRESS]', true) }}</span></div>
     </div>
-  </header>
-
-  <section class="section">
-    <h2>ABOUT ME</h2><div class="rule"></div>
-    <p>{{ cv.about_me|default('Professional profile description...') }}</p>
-  </section>
-
-  <section class="section">
-    <h2>EDUCATION AND TRAINING</h2><div class="rule"></div>
+    <div class="europass"><img class="eu-flag" src="file:///{{ flag_path }}" alt="European Union flag"><div class="eu-text">europass</div></div>
+  </div>
+  <div class="section about"><h2>ABOUT ME</h2><div class="body-text">{{ cv.about_me|default('Write a concise professional profile here.', true) }}</div></div>
+  <div class="section"><h2>EDUCATION AND TRAINING</h2>
     {% for edu in cv.education %}
-    <article class="entry">
-      <h3>{{ edu.title }}</h3>
-      <div class="institution">{{ edu.organization }} <span>{{ edu.start_date }} – {{ edu.end_date|default('Ongoing') }}</span></div>
-      <div class="location">{{ edu.city|default('') }}, {{ edu.country|default('') }}</div>
-      {% if edu.description %}
-      <p>{{ edu.description }}</p>
-      {% endif %}
-    </article>
+    <div class="entry"><div class="entry-title">{{ edu.title }}</div><div class="entry-subtitle">{{ edu.organization }} <span class="meta">{{ edu.start_date }} - {{ edu.end_date|default('Ongoing', true) }}</span></div><div class="details">{{ edu.city|default('', true) }}{% if edu.country %}, {{ edu.country }}{% endif %}</div>{% if edu.description %}<div class="details">{{ edu.description }}</div>{% endif %}</div>
+    {% else %}<div class="entry placeholder">DEGREE / QUALIFICATION<br>Institution Name [MM/YYYY - MM/YYYY]</div>
     {% endfor %}
-  </section>
-
-  <section class="section">
-    <h2>WORK EXPERIENCE</h2><div class="rule"></div>
+  </div>
+  <div class="section"><h2>WORK EXPERIENCE</h2>
     {% for work in cv.work_experience %}
-    <article class="entry">
-      <div class="company">{{ work.employer }} — {{ work.city|default('') }} {{ work.country|default('') }}</div>
-      <h3>{{ work.title }}</h3>
-      <div class="date">{{ work.start_date }} – {{ work.end_date|default('Ongoing') }}</div>
-      {% if work.description %}
-      <p>{{ work.description }}</p>
-      {% endif %}
-    </article>
+    <div class="work-entry"><div class="work-company">{{ work.employer }}{% if work.city or work.country %} - {{ work.city|default('', true) }}{% if work.country %}, {{ work.country }}{% endif %}{% endif %}</div><div class="work-role">{{ work.title }}</div><div class="meta">{{ work.start_date }} - {{ work.end_date|default('CURRENT', true) }}</div>{% if work.description %}<div class="details">{{ work.description }}</div>{% endif %}</div>
+    {% else %}<div class="work-entry placeholder">COMPANY NAME - CITY, COUNTRY<br>JOB TITLE<br>[MM/YYYY - CURRENT]</div>
     {% endfor %}
-  </section>
+  </div>
+  <div class="template-note">Blank values remain editable placeholders</div>
 </section>
-
 <section class="page">
-  <section class="section">
-    <h2>SKILLS</h2><div class="rule"></div>
-    <div class="skill">
-      <h3>Digital Skills</h3>
-      <p>{{ cv.digital_skills|join(', ') }}</p>
-    </div>
-  </section>
-
-  <section class="section">
-    <h2>HOBBIES AND INTERESTS</h2><div class="rule"></div>
-    <p>{{ cv.hobbies|join(' / ') }}</p>
-  </section>
-
-  {% if cv.other_info %}
-  <section class="section">
-    <h2>ADDITIONAL DETAILS</h2><div class="rule"></div>
-    <p style="white-space: pre-wrap;">{{ cv.other_info }}</p>
-  </section>
-  {% endif %}
+  <div class="stripe top-stripe"></div><div class="corner top-left"></div><div class="corner top-right"></div><div class="stripe bottom-stripe"></div><div class="corner bottom-left"></div><div class="corner bottom-right"></div>
+  <div class="section" style="margin-top:0"><h2>LANGUAGE SKILLS</h2><div class="body-text"><span class="label">Mother tongue(s):</span> {{ cv.mother_tongues|join(', ')|default('[LANGUAGE]', true) }}</div>
+    {% for language in cv.other_languages %}<div class="body-text"><b>{{ language.language }}</b></div><div class="language-row"><span>LISTENING {{ language.listening }}</span><span>READING {{ language.reading }}</span><span>WRITING {{ language.writing }}</span></div><div class="language-row"><span>SPOKEN PRODUCTION {{ language.spoken_production }}</span><span>SPOKEN INTERACTION {{ language.spoken_interaction }}</span></div>{% else %}<div class="body-text placeholder">[LANGUAGE] - LISTENING [B2] - READING [B2] - WRITING [B2]</div>{% endfor %}
+  </div>
+  <div class="section"><h2>SKILLS</h2><div class="skill-group"><div class="skill-title">DIGITAL &amp; TECHNICAL SKILLS</div><div class="skill-text">{{ cv.digital_skills|join(' / ')|default('[SKILLS]', true) }}</div></div>{% if cv.other_info %}<div class="skill-group"><div class="skill-title">ADDITIONAL DETAILS</div><div class="skill-text">{{ cv.other_info }}</div></div>{% endif %}</div>
+  <div class="section"><h2>HOBBIES AND INTERESTS</h2><div class="body-text">{{ cv.hobbies|join(' / ')|default('[HOBBIES]', true) }}</div></div>
+  {% if cv.work_experience|length > 2 %}<div class="section"><h2>ADDITIONAL WORK EXPERIENCE</h2>{% for work in cv.work_experience[2:] %}<div class="work-entry"><div class="work-company">{{ work.employer }}</div><div class="work-role">{{ work.title }}</div><div class="meta">{{ work.start_date }} - {{ work.end_date|default('CURRENT', true) }}</div><div class="details">{{ work.description|default('', true) }}</div></div>{% endfor %}</div>{% endif %}
+  <div class="closing">{{ cv.other_info|default('Write the final career or study objective here.', true) }}<div class="date">[CITY], [DD/MM/YYYY]</div></div>
+  <div class="template-note">Blank values remain editable placeholders</div>
 </section>
-
-</main>
 </body>
 </html>

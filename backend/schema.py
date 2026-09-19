@@ -11,10 +11,12 @@ class Address(BaseModel):
 class PersonalInfo(BaseModel):
     first_name: Optional[str] = None  
     last_name: Optional[str] = None   
+    passport: Optional[str] = None
     email: Optional[str] = None
     phone: Optional[str] = None
     address: Optional[Address] = None
     date_of_birth: Optional[str] = Field(None, description="Format: DD/MM/YYYY")
+    gender: Optional[str] = None
     nationality: Optional[List[str]] = Field(default_factory=list)
 
 class WorkExperience(BaseModel):
@@ -56,26 +58,17 @@ class EuropassCV(BaseModel):
     other_info: Optional[str] = None
 
 class ChatState(str, Enum):
-    AWAITING_PROFILE_PIC = "AWAITING_PROFILE_PIC"
-    AWAITING_PASSPORT = "AWAITING_PASSPORT"
-    AWAITING_ABOUT = "AWAITING_ABOUT"
-    AWAITING_HIGHER_SEC = "AWAITING_HIGHER_SEC"
-    AWAITING_SEC_EDU = "AWAITING_SEC_EDU"
-    AWAITING_WORK = "AWAITING_WORK"
-    AWAITING_LANGUAGES = "AWAITING_LANGUAGES"
-    AWAITING_SKILLS = "AWAITING_SKILLS"
-    AWAITING_OTHER = "AWAITING_OTHER"
-    AWAITING_HOBBIES = "AWAITING_HOBBIES"
-    # New manual collection and preview states
-    AWAITING_MANUAL_PURPOSE = "AWAITING_MANUAL_PURPOSE"
-    AWAITING_MANUAL_CONTACT = "AWAITING_MANUAL_CONTACT"
-    AWAITING_MANUAL_SKILLS_HOBBIES = "AWAITING_MANUAL_SKILLS_HOBBIES"
+    GATHERING_PERSONAL = "GATHERING_PERSONAL"
+    GATHERING_EDUCATION = "GATHERING_EDUCATION"
+    GATHERING_WORK = "GATHERING_WORK"
+    GATHERING_SKILLS = "GATHERING_SKILLS"
     PREVIEW_READY = "PREVIEW_READY"
     AWAITING_REVISION = "AWAITING_REVISION"
     READY_FOR_PDF = "READY_FOR_PDF"
 
 class SessionData(BaseModel):
     session_id: str
-    state: ChatState = ChatState.AWAITING_PROFILE_PIC
+    state: ChatState = ChatState.GATHERING_PERSONAL
     cv: EuropassCV = Field(default_factory=EuropassCV)
     missing_fields_queue: List[str] = Field(default_factory=list)
+    created_at: Optional[float] = None

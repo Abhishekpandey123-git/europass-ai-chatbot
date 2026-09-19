@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 683" role="img" aria-label="European Union flag">
+  <rect width="1024" height="683" fill="#003399"/>
+  <defs>
+    <path id="star" fill="#ffcc00" d="m512 75 12.8 35.2 37.4.8-29.7 22.6 11.3 35.7-31.8-20.4-31.8 20.4 11.3-35.7-29.7-22.6 37.4-.8z"/>
+  </defs>
+  <g>
+    <use href="#star" transform="rotate(0 512 341.5)"/>
+    <use href="#star" transform="rotate(30 512 341.5)"/>
+    <use href="#star" transform="rotate(60 512 341.5)"/>
+    <use href="#star" transform="rotate(90 512 341.5)"/>
+    <use href="#star" transform="rotate(120 512 341.5)"/>
+    <use href="#star" transform="rotate(150 512 341.5)"/>
+    <use href="#star" transform="rotate(180 512 341.5)"/>
+    <use href="#star" transform="rotate(210 512 341.5)"/>
+    <use href="#star" transform="rotate(240 512 341.5)"/>
+    <use href="#star" transform="rotate(270 512 341.5)"/>
+    <use href="#star" transform="rotate(300 512 341.5)"/>
+    <use href="#star" transform="rotate(330 512 341.5)"/>
+  </g>
+</svg>

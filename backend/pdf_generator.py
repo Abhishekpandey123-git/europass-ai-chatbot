@@ -19,6 +19,7 @@ def generate_pdf_from_cv(cv_data: EuropassCV) -> bytes:
     else:
         cv_dict = cv_data.dict() # For older Pydantic versions
         
-    html_out = template.render(cv=cv_dict)
+    flag_path = os.path.join(TEMPLATE_DIR, "eu-flag.svg").replace("\\", "/")
+    html_out = template.render(cv=cv_dict, flag_path=flag_path)
     pdf_bytes = HTML(string=html_out).write_pdf()
     return pdf_bytes
